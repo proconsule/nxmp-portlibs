@@ -9,8 +9,10 @@ options=(!strip libtool staticlibs)
 source=(
         'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite-amalgamation-3.7.3.tar.gz'
 	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite3.patch'
+	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/mmmap.patch'
 )
 sha256sums=(
+	'SKIP'
 	'SKIP'
 	'SKIP'
 )
@@ -21,18 +23,19 @@ build() {
   cd ${pkgname}
 
   patch -Np1 -i $srcdir/sqlite3.patch
+  patch -Np1 -i $srcdir/mmap.patch
   
   source /opt/devkitpro/switchvars.sh
 
-  ./configure --prefix="${PORTLIBS_PREFIX}" --host=aarch64-none-elf \
-    --disable-shared --enable-static --disable-largefile
+  ./configure --prefix="${PORTLIBS_PREFIX}" --disable-dynamic-extensions --disable-threadsafe --disable-libtool-lock --enable-static --disable-largefile --host=arm-noeabi-elf
 
-  make
+  make libsqlite3.la
 }
 
 package() {
   cd ${pkgname}
   
-  make DESTDIR="$pkgdir" install
+  make DESTDIR="$pkgdir" install-libLTLIBRARIES
+  make DESTDIR="$pkgdir" install-data-am
   
 }
