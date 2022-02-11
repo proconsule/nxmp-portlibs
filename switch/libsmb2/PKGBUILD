@@ -28,7 +28,7 @@ build() {
   patch -Np1 -i $srcdir/smb2-getlogin.patch
   patch -Np1 -i $srcdir/smb2-socket.patch
   
-  source /opt/devkitpro/switchvars.sh
+  source ${DEVKITPRO}/switchvars.sh
 
   ./bootstrap
 
@@ -43,5 +43,5 @@ package() {
   
   make DESTDIR="$pkgdir" install
   
-  install -Dm644 LICENCE-LGPL-2.1.txt "$pkgdir"/opt/devkitpro/portlibs/switch/licenses/$pkgname/LICENCE
+  install -Dm644 LICENCE-LGPL-2.1.txt "$pkgdir"${PORTLIBS_PREFIX}/licenses/$pkgname/LICENCE
 }
