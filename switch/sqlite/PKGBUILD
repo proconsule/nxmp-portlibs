@@ -5,11 +5,10 @@ pkgdesc='SQLite 3 library'
 arch=('any')
 url='https://www.sqlite.org/'
 license=('Public Domain')
-options=(!strip libtool staticlibs)
 source=(
         'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite-amalgamation-3.7.3.tar.gz'
 	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite3.patch'
-	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/mmmap.patch'
+	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/mmap.patch'
 )
 sha256sums=(
 	'SKIP'
@@ -26,7 +25,7 @@ build() {
   patch -Np1 -i $srcdir/mmap.patch
   
   source /opt/devkitpro/switchvars.sh
-
+  export CFLAGS="$CFLAGS -DSQLITE_DEBUG"
   ./configure --prefix="${PORTLIBS_PREFIX}" --disable-dynamic-extensions --disable-threadsafe --disable-libtool-lock --enable-static --disable-largefile --host=arm-noeabi-elf
 
   make libsqlite3.la
