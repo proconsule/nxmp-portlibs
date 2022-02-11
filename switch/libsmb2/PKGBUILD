@@ -10,7 +10,7 @@ source=(
 	"https://github.com/sahlberg/libsmb2/archive/refs/tags/v3.0.0.tar.gz"
 	' https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/libsmb2/smb2-endian.patch'
 )
-sha256sums=('SKIP')
+sha256sums=('SKIP','SKIP')
 #makedepends=('git' 'switch-pkg-config' 'devkitpro-pkgbuild-helpers')
 groups=('switch-portlibs')
 
