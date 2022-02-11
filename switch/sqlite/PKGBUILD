@@ -1,0 +1,38 @@
+pkgname=sqlite-3.7.3
+pkgver=3.7.3
+pkgrel=1
+pkgdesc='SQLite 3 library'
+arch=('any')
+url='https://www.sqlite.org/'
+license=('Public Domain')
+options=(!strip libtool staticlibs)
+source=(
+        'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite-amalgamation-3.7.3.tar.gz'
+	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite3.patch'
+)
+sha256sums=(
+	'SKIP'
+	'SKIP'
+)
+#makedepends=('git' 'switch-pkg-config' 'devkitpro-pkgbuild-helpers')
+groups=('switch-portlibs')
+
+build() {
+  cd ${pkgname}
+
+  patch -Np1 -i $srcdir/sqlite3.patch
+  
+  source /opt/devkitpro/switchvars.sh
+
+  ./configure --prefix="${PORTLIBS_PREFIX}" --host=aarch64-none-elf \
+    --disable-shared --enable-static --disable-largefile
+
+  make
+}
+
+package() {
+  cd ${pkgname}
+  
+  make DESTDIR="$pkgdir" install
+  
+}

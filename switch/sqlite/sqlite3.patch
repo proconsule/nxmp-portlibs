@@ -1,0 +1,112 @@
+--- /home/ceco/switch-portlibs/sqlite/sqlite-3.7.3/sqlite3.c	2010-10-08 04:42:21.000000000 +0200
++++ sqlite-3.7.3/sqlite3.c	2021-11-13 12:36:34.047824850 +0100
+@@ -25485,17 +25485,18 @@
+ */
+ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
+   int got;
+-#if (!defined(USE_PREAD) && !defined(USE_PREAD64))
++//#if (!defined(USE_PREAD) && !defined(USE_PREAD64))
+   i64 newOffset;
+-#endif
++//#endif
+   TIMER_START;
+-#if defined(USE_PREAD)
++/*#if defined(USE_PREAD)
+   got = pread(id->h, pBuf, cnt, offset);
+   SimulateIOError( got = -1 );
+ #elif defined(USE_PREAD64)
+   got = pread64(id->h, pBuf, cnt, offset);
+   SimulateIOError( got = -1 );
+ #else
++*/
+   newOffset = lseek(id->h, offset, SEEK_SET);
+   SimulateIOError( newOffset-- );
+   if( newOffset!=offset ){
+@@ -25507,12 +25508,13 @@
+     return -1;
+   }
+   got = read(id->h, pBuf, cnt);
+-#endif
++//#endif
+   TIMER_END;
+   if( got<0 ){
+     ((unixFile*)id)->lastErrno = errno;
+   }
+   OSTRACE(("READ    %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED));
++  printf("READ    %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED);
+   return got;
+ }
+ 
+@@ -25563,16 +25565,21 @@
+ */
+ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
+   int got;
+-#if (!defined(USE_PREAD) && !defined(USE_PREAD64))
++//#if (!defined(USE_PREAD) && !defined(USE_PREAD64))
+   i64 newOffset;
+-#endif
++//#endif
+   TIMER_START;
++/*  
+ #if defined(USE_PREAD)
+   got = pwrite(id->h, pBuf, cnt, offset);
+ #elif defined(USE_PREAD64)
+   got = pwrite64(id->h, pBuf, cnt, offset);
+ #else
++*/
++
++  printf("WRITE SEEK TO %d %d\n",id->h,offset);
+   newOffset = lseek(id->h, offset, SEEK_SET);
++  printf("WRITE NEWOFFSET %d\n",newOffset);
+   if( newOffset!=offset ){
+     if( newOffset == -1 ){
+       ((unixFile*)id)->lastErrno = errno;
+@@ -25582,12 +25589,13 @@
+     return -1;
+   }
+   got = write(id->h, pBuf, cnt);
+-#endif
++//#endif
+   TIMER_END;
+   if( got<0 ){
+     ((unixFile*)id)->lastErrno = errno;
+   }
+ 
++  printf("WRITE   %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED);
+   OSTRACE(("WRITE   %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED));
+   return got;
+ }
+@@ -25903,6 +25911,7 @@
+   assert( id );
+   rc = fstat(((unixFile*)id)->h, &buf);
+   SimulateIOError( rc=1 );
++  printf("SQLite FSTAT RC %d\n",rc);
+   if( rc!=0 ){
+     ((unixFile*)id)->lastErrno = errno;
+     return SQLITE_IOERR_FSTAT;
+@@ -26967,7 +26976,7 @@
+   assert( zFilename==0 || zFilename[0]=='/' 
+     || pVfs->pAppData==(void*)&autolockIoFinder );
+ #else
+-  assert( zFilename==0 || zFilename[0]=='/' );
++  //assert( zFilename==0 || zFilename[0]=='/' );
+ #endif
+ 
+   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
+@@ -27461,6 +27470,7 @@
+     }
+     fd = open(zName, openFlags, openMode);
+     OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
++	printf("OPENX   %-3d %s 0%o\n", fd, zName, openFlags);
+     if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
+       /* Failed to open the file for read/write access. Try read-only. */
+       flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+@@ -27697,6 +27707,8 @@
+   UNUSED_PARAMETER(pVfs);
+ 
+   zOut[nOut-1] = '\0';
++  
++  
+   if( zPath[0]=='/' ){
+     sqlite3_snprintf(nOut, zOut, "%s", zPath);
+   }else{
