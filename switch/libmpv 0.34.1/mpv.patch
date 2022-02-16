@@ -1,6 +1,6 @@
 diff '--exclude=*waf*' '--exclude=__pycache__' '--exclude=build' '--exclude=wscript_build.py.orig' -NBaur mpv-0.34.1/osdep/io.c mpv-0.34.1-switch/osdep/io.c
---- mpv-0.34.1/osdep/io.c	2022-02-16 18:33:23.796033499 -0300
-+++ mpv-0.34.1-switch/osdep/io.c	2022-01-03 16:45:08.000000000 -0300
+--- mpv-0.34.1/osdep/io.c	2020-11-22 18:46:28.000000000 +0100
++++ mpv-0.34.1-switch/osdep/io.c	2021-01-21 11:14:31.172503720 +0100
 @@ -61,7 +61,7 @@
      return true;
  }
