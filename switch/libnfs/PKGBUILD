@@ -18,7 +18,7 @@ sha256sums=(
 groups=('switch-portlibs')
 
 build() {
-  cd ${pkgname}
+  cd libnfs
 
   patch -Np1 -i $srcdir/libnfs.patch
   
