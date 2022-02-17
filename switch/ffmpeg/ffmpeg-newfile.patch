@@ -748,3 +748,4 @@ diff -ruN ../ffmpeg-test/FFmpeg/libavformat/libssh2.c libavformat/libssh2.c
 +    .priv_data_class     = &libssh_context_class,
 +    .flags               = URL_PROTOCOL_FLAG_NETWORK,
 +};
+
