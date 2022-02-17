@@ -1,0 +1,156 @@
+diff --git a/configure b/configure
+index 92610c7edc..8c20e9a8c2 100755
+--- a/configure
++++ b/configure
+@@ -264,11 +264,13 @@ External library support:
+   --enable-librtmp         enable RTMP[E] support via librtmp [no]
+   --enable-libshine        enable fixed-point MP3 encoding via libshine [no]
+   --enable-libsmbclient    enable Samba protocol via libsmbclient [no]
++  --enable-libsmb2         enable Samba protocol via libsmb2 [no]
++  --enable-libnfs          enable NFS protocol via libnfs [no]
+   --enable-libsnappy       enable Snappy compression, needed for hap encoding [no]
+   --enable-libsoxr         enable Include libsoxr resampling [no]
+   --enable-libspeex        enable Speex de/encoding via libspeex [no]
+   --enable-libsrt          enable Haivision SRT protocol via libsrt [no]
+-  --enable-libssh          enable SFTP protocol via libssh [no]
++  --enable-libssh2         enable SFTP protocol via libssh2 [no]
+   --enable-libsvtav1       enable AV1 encoding via SVT [no]
+   --enable-libtensorflow   enable TensorFlow as a DNN module backend
+                            for DNN based filters like sr [no]
+@@ -1835,11 +1837,13 @@ EXTERNAL_LIBRARY_LIST="
+     librtmp
+     libshine
+     libsmbclient
++    libsmb2
++	libnfs
+     libsnappy
+     libsoxr
+     libspeex
+     libsrt
+-    libssh
++    libssh2
+     libsvtav1
+     libtensorflow
+     libtesseract
+@@ -3539,9 +3543,11 @@ librtmps_protocol_deps="librtmp"
+ librtmpt_protocol_deps="librtmp"
+ librtmpte_protocol_deps="librtmp"
+ libsmbclient_protocol_deps="libsmbclient gplv3"
++libsmb2_protocol_deps="libsmb2"
++libnfs_protocol_deps="libnfs"
+ libsrt_protocol_deps="libsrt"
+ libsrt_protocol_select="network"
+-libssh_protocol_deps="libssh"
++libssh2_protocol_deps="libssh2"
+ libtls_conflict="openssl gnutls mbedtls"
+ libzmq_protocol_deps="libzmq"
+ libzmq_protocol_select="network"
+@@ -5611,6 +5617,10 @@ case $target_os in
+         ;;
+     minix)
+         ;;
++    horizon)
++        network_extralibs="-lnx"
++        enable section_data_rel_ro
++        ;;
+     none)
+         ;;
+     *)
+@@ -6480,9 +6490,11 @@ enabled librubberband     && require_pkg_config librubberband "rubberband >= 1.8
+ enabled libshine          && require_pkg_config libshine shine shine/layer3.h shine_encode_buffer
+ enabled libsmbclient      && { check_pkg_config libsmbclient smbclient libsmbclient.h smbc_init ||
+                                require libsmbclient libsmbclient.h smbc_init -lsmbclient; }
++enabled libsmb2		  && require_headers "smb2/smb2.h"
++enabled libnfs 		  && require_headers "nfsc/libnfs.h"
+ enabled libsnappy         && require libsnappy snappy-c.h snappy_compress -lsnappy -lstdc++
+ enabled libsoxr           && require libsoxr soxr.h soxr_create -lsoxr
+-enabled libssh            && require_pkg_config libssh libssh libssh/sftp.h sftp_init
++enabled libssh2           && require_headers "libssh2.h"
+ enabled libspeex          && require_pkg_config libspeex speex speex/speex.h speex_decoder_init
+ enabled libsrt            && require_pkg_config libsrt "srt >= 1.3.0" srt/srt.h srt_socket
+ enabled libsvtav1         && require_pkg_config libsvtav1 "SvtAv1Enc >= 0.8.4" EbSvtAv1Enc.h svt_av1_enc_init_handle
+diff --git a/libavfilter/vf_drawtext.c b/libavfilter/vf_drawtext.c
+index 2a88692cbd..0badc76192 100644
+--- a/libavfilter/vf_drawtext.c
++++ b/libavfilter/vf_drawtext.c
+@@ -37,7 +37,9 @@
+ #if HAVE_UNISTD_H
+ #include <unistd.h>
+ #endif
++#ifndef __SWITCH__
+ #include <fenv.h>
++#endif
+ 
+ #if CONFIG_LIBFONTCONFIG
+ #include <fontconfig/fontconfig.h>
+@@ -1117,14 +1119,17 @@ static int func_eval_expr_int_format(AVFilterContext *ctx, AVBPrint *bp,
+             return AVERROR(EINVAL);
+         }
+     }
+-
++#ifndef __SWITCH__
+     feclearexcept(FE_ALL_EXCEPT);
++#endif
+     intval = res;
++#ifndef __SWITCH__
+ #if defined(FE_INVALID) && defined(FE_OVERFLOW) && defined(FE_UNDERFLOW)
+     if ((ret = fetestexcept(FE_INVALID|FE_OVERFLOW|FE_UNDERFLOW))) {
+         av_log(ctx, AV_LOG_ERROR, "Conversion of floating-point result to int failed. Control register: 0x%08x. Conversion result: %d\n", ret, intval);
+         return AVERROR(EINVAL);
+     }
++#endif
+ #endif
+ 
+     if (argc == 3)
+diff --git a/libavformat/Makefile b/libavformat/Makefile
+index 8a1b40aafe..8519d861fd 100644
+--- a/libavformat/Makefile
++++ b/libavformat/Makefile
+@@ -670,8 +670,10 @@ OBJS-$(CONFIG_LIBRTMPS_PROTOCOL)         += librtmp.o
+ OBJS-$(CONFIG_LIBRTMPT_PROTOCOL)         += librtmp.o
+ OBJS-$(CONFIG_LIBRTMPTE_PROTOCOL)        += librtmp.o
+ OBJS-$(CONFIG_LIBSMBCLIENT_PROTOCOL)     += libsmbclient.o
++OBJS-$(CONFIG_LIBSMB2_PROTOCOL)     	 += libsmb2.o
++OBJS-$(CONFIG_LIBNFS_PROTOCOL)     	 += libnfs.o
+ OBJS-$(CONFIG_LIBSRT_PROTOCOL)           += libsrt.o
+-OBJS-$(CONFIG_LIBSSH_PROTOCOL)           += libssh.o
++OBJS-$(CONFIG_LIBSSH2_PROTOCOL)           += libssh2.o
+ OBJS-$(CONFIG_LIBZMQ_PROTOCOL)           += libzmq.o
+ 
+ # libavdevice dependencies
+diff --git a/libavformat/os_support.c b/libavformat/os_support.c
+index 15cea7fa5b..28714c3f15 100644
+--- a/libavformat/os_support.c
++++ b/libavformat/os_support.c
+@@ -47,6 +47,7 @@
+ #if !HAVE_INET_ATON
+ #include <stdlib.h>
+ 
++/*
+ static int inet_aton(const char *str, struct in_addr *add)
+ {
+     unsigned int add1 = 0, add2 = 0, add3 = 0, add4 = 0;
+@@ -61,6 +62,7 @@ static int inet_aton(const char *str, struct in_addr *add)
+ 
+     return 1;
+ }
++*/
+ #endif /* !HAVE_INET_ATON */
+ 
+ int ff_getaddrinfo(const char *node, const char *service,
+diff --git a/libavformat/protocols.c b/libavformat/protocols.c
+index b108aa6c7e..774db612b9 100644
+--- a/libavformat/protocols.c
++++ b/libavformat/protocols.c
+@@ -70,8 +70,10 @@ extern const URLProtocol ff_librtmps_protocol;
+ extern const URLProtocol ff_librtmpt_protocol;
+ extern const URLProtocol ff_librtmpte_protocol;
+ extern const URLProtocol ff_libsrt_protocol;
+-extern const URLProtocol ff_libssh_protocol;
++extern const URLProtocol ff_libssh2_protocol;
+ extern const URLProtocol ff_libsmbclient_protocol;
++extern const URLProtocol ff_libsmb2_protocol;
++extern const URLProtocol ff_libnfs_protocol;
+ extern const URLProtocol ff_libzmq_protocol;
+ 
+ #include "libavformat/protocol_list.c"

@@ -1,0 +1,43 @@
+pkgname=switch-ffmpeg
+pkgver=git-85c169f6a62ad4e357ab139a4511854525938323
+pkgrel=1
+pkgdesc='ffmpeg port (for NXMP Switch development)'
+arch=('any')
+url='https://ffmpeg.org/'
+license=('LGPL' 'GPL')
+options=(!strip staticlibs)
+makedepends=('switch-pkg-config' 'dkp-toolchain-vars')
+depends=('switch-zlib' 'switch-bzip2' 'switch-libass' 'switch-libfribidi'
+         'switch-freetype')
+source=("https://github.com/proconsule/nxmp-portlibs/raw/master/switch/ffmpeg/FFmpeg-85c169f6a62ad4e357ab139a4511854525938323.tar.bz2" "https://github.com/proconsule/nxmp-portlibs/raw/master/switch/ffmpeg/ffmpeg-nxmp.patch")
+sha256sums=(
+ 'SKIP'
+ 'SKIP'
+)
+groups=('switch-portlibs')
+
+prepare() {
+  cd FFmpeg
+  patch -Np1 -i "$srcdir/ffmpeg-nxmp.patch"
+}
+
+build() {
+  cd FFmpeg
+
+  source /opt/devkitpro/switchvars.sh
+
+  ./configure --prefix=$PORTLIBS_PREFIX --disable-shared --enable-static --cross-prefix=aarch64-none-elf- --enable-cross-compile --arch=aarch64 --target-os=horizon --enable-pic --extra-cflags='-D__SWITCH__ -D_GNU_SOURCE -O2 -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' --extra-cxxflags='-D__SWITCH__ -D_GNU_SOURCE -O2 -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' --extra-ldflags='-fPIE -L${PORTLIBS_PREFIX}/lib -L${DEVKITPRO}/libnx/lib' --disable-runtime-cpudetect --disable-programs --disable-debug --disable-doc --disable-autodetect --disable-avdevice --disable-hwaccels --disable-encoders --enable-swscale --enable-swresample --enable-network --disable-protocols --enable-protocol='file,http,ftp,tcp,udp,rtmp,hls,https,tls,libssh2,libsmb2,libnfs' --enable-asm --enable-neon --enable-zlib --enable-bzlib --enable-libass --enable-libfreetype --enable-libfribidi --enable-mbedtls --enable-version3 --enable-demuxer=hls --enable-libssh2 --enable-libsmb2 --enable-libnfs
+
+  make
+}
+
+package() {
+  cd FFmpeg
+
+  source /opt/devkitpro/switchvars.sh
+
+  make DESTDIR="$pkgdir" install
+
+  # remove examples
+  rm -r "$pkgdir"${PORTLIBS_PREFIX}/share
+}
