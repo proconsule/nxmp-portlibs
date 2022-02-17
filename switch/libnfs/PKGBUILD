@@ -33,7 +33,7 @@ build() {
 }
 
 package() {
-  cd ${pkgname}
+  cd libnfs
   
   make DESTDIR="$pkgdir" install
   
