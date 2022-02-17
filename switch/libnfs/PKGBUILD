@@ -27,7 +27,7 @@ build() {
   ./bootstrap
 
   ./configure --prefix="${PORTLIBS_PREFIX}" --host=aarch64-none-elf \
-    --disable-shared --enable-static --disable-werror
+     --disable-shared --enable-static --disable-werror --disable-utils --disable-examples
 
   make
 }
