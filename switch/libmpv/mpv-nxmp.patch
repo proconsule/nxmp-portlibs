@@ -1,0 +1,172 @@
+diff -ur mpv-0.34.1/osdep/io.c mpv-0.34.1-patched/osdep/io.c
+--- mpv-0.34.1/osdep/io.c	2022-01-03 20:45:08.000000000 +0100
++++ mpv-0.34.1-patched/osdep/io.c	2022-02-18 09:58:04.748580049 +0100
+@@ -61,7 +61,7 @@
+     return true;
+ }
+ 
+-#ifdef __MINGW32__
++#ifdef __SWITCH__
+ int mp_make_cloexec_pipe(int pipes[2])
+ {
+     pipes[0] = pipes[1] = -1;
+@@ -81,7 +81,7 @@
+ }
+ #endif
+ 
+-#ifdef __MINGW32__
++#ifdef __SWITCH__
+ int mp_make_wakeup_pipe(int pipes[2])
+ {
+     return mp_make_cloexec_pipe(pipes);
+diff -ur mpv-0.34.1/player/scripting.c mpv-0.34.1-patched/player/scripting.c
+--- mpv-0.34.1/player/scripting.c	2022-01-03 20:45:08.000000000 +0100
++++ mpv-0.34.1-patched/player/scripting.c	2022-02-18 09:58:49.833325674 +0100
+@@ -259,12 +259,12 @@
+ 
+ void mp_load_builtin_scripts(struct MPContext *mpctx)
+ {
+-    load_builtin_script(mpctx, 0, mpctx->opts->lua_load_osc, "@osc.lua");
+-    load_builtin_script(mpctx, 1, mpctx->opts->lua_load_ytdl, "@ytdl_hook.lua");
+-    load_builtin_script(mpctx, 2, mpctx->opts->lua_load_stats, "@stats.lua");
+-    load_builtin_script(mpctx, 3, mpctx->opts->lua_load_console, "@console.lua");
+-    load_builtin_script(mpctx, 4, mpctx->opts->lua_load_auto_profiles,
+-                        "@auto_profiles.lua");
++//    load_builtin_script(mpctx, 0, mpctx->opts->lua_load_osc, "@osc.lua");
++//    load_builtin_script(mpctx, 1, mpctx->opts->lua_load_ytdl, "@ytdl_hook.lua");
++//    load_builtin_script(mpctx, 2, mpctx->opts->lua_load_stats, "@stats.lua");
++//    load_builtin_script(mpctx, 3, mpctx->opts->lua_load_console, "@console.lua");
++//    load_builtin_script(mpctx, 4, mpctx->opts->lua_load_auto_profiles,
++//                        "@auto_profiles.lua");
+ }
+ 
+ bool mp_load_scripts(struct MPContext *mpctx)
+diff -ur mpv-0.34.1/stream/stream_lavf.c mpv-0.34.1-patched/stream/stream_lavf.c
+--- mpv-0.34.1/stream/stream_lavf.c	2022-01-03 20:45:08.000000000 +0100
++++ mpv-0.34.1-patched/stream/stream_lavf.c	2022-02-18 09:59:25.305911988 +0100
+@@ -426,7 +426,7 @@
+   .open = open_f,
+   .protocols = (const char *const[]){
+      "lavf", "ffmpeg", "udp", "ftp", "tcp", "tls", "unix", "sftp", "md5",
+-     "concat", "smb",
++     "concat", "smb", "nfs",
+      NULL },
+   .stream_origin = STREAM_ORIGIN_UNSAFE,
+   .can_write = true,
+diff -ur mpv-0.34.1/sub/filter_regex.c mpv-0.34.1-patched/sub/filter_regex.c
+--- mpv-0.34.1/sub/filter_regex.c	2022-01-03 20:45:08.000000000 +0100
++++ mpv-0.34.1-patched/sub/filter_regex.c	2022-02-18 10:00:10.614660491 +0100
+@@ -1,5 +1,5 @@
+-#include <regex.h>
+ #include <sys/types.h>
++#include <regex.h>
+ 
+ #include "common/common.h"
+ #include "common/msg.h"
+diff -ur mpv-0.34.1/video/out/gpu/video.c mpv-0.34.1-patched/video/out/gpu/video.c
+--- mpv-0.34.1/video/out/gpu/video.c	2022-01-03 20:45:08.000000000 +0100
++++ mpv-0.34.1-patched/video/out/gpu/video.c	2022-02-18 10:06:38.997063102 +0100
+@@ -109,6 +109,7 @@
+     int w, h; // logical size (after transformation)
+     struct gl_transform transform; // rendering transformation
+     int padding; // number of leading padding components (e.g. 2 = rg is padding)
++    int interlaced;
+ };
+ 
+ // A named image, for user scripting purposes
+@@ -467,6 +468,7 @@
+         {"opengl-gamma", OPT_REPLACED("gamma-factor")},
+         {"linear-scaling", OPT_REMOVED("Split into --linear-upscaling and "
+                                         "--linear-downscaling")},
++        {"gpu-nxmp-deint", OPT_CHOICE(deint_shader,{"0", 0}, {"1", 1}, {"2", -1})},
+         {0}
+     },
+     .size = sizeof(struct gl_video_opts),
+@@ -812,6 +814,10 @@
+             .h = t->h,
+             .padding = padding,
+         };
++        if (p->opts.deint_shader == -1)
++            img[n].interlaced = !!(vimg->mpi->fields & MP_IMGFIELD_INTERLACED);
++        else if (p->opts.deint_shader == 1)
++            img[n].interlaced = 1;
+ 
+         for (int i = 0; i < 4; i++)
+             img[n].components += !!p->ra_format.components[n][i];
+@@ -1348,8 +1354,21 @@
+         img.multiplier *= 1.0 / (tex_max - 1);
+     }
+ 
+-    GLSLF("color.%s = %f * vec4(texture(texture%d, texcoord%d)).%s;\n",
+-          dst, img.multiplier, id, id, src);
++//    GLSLF("color.%s = %f * vec4(texture(texture%d, texcoord%d)).%s;\n",
++//          dst, img.multiplier, id, id, src);
++
++        if (img.interlaced) {
++               GLSLF("float yprev%d = texcoord%d.y == 0.0 ? 0.0 : "
++                              "texcoord%d.y - 1.0 / texture_size%d.y;\n",
++                                                               id, id, id, id);
++        GLSLF("vec2 prev%d = vec2(texcoord%d.x, yprev%d);\n", id, id, id);
++        GLSLF("color.%s = %f * mix(texture(texture%d, texcoord%d), "
++                                  "texture(texture%d, prev%d), 0.5).%s;\n",
++       dst, img.multiplier, id, id, id, id, src);
++    } else {
++        GLSLF("color.%s = %f * vec4(texture(texture%d, texcoord%d)).%s;\n",
++              dst, img.multiplier, id, id, src);
++    }    
+ 
+     *offset += count;
+ }
+@@ -2134,7 +2153,7 @@
+     // If any textures are still in integer format by this point, we need
+     // to introduce an explicit conversion pass to avoid breaking hooks/scaling
+     for (int n = 0; n < 4; n++) {
+-        if (img[n].tex && img[n].tex->params.format->ctype == RA_CTYPE_UINT) {
++        if (img[n].tex && (img[n].tex->params.format->ctype == RA_CTYPE_UINT  || img[n].interlaced)) {
+             GLSLF("// use_integer fix for plane %d\n", n);
+             copy_image(p, &(int){0}, img[n]);
+             pass_describe(p, "use_integer fix");
+@@ -3781,6 +3800,7 @@
+             .early_flush = p->opts.early_flush,
+             .icc_opts = p->opts.icc_opts,
+             .hwdec_interop = p->opts.hwdec_interop,
++            .deint_shader = p->opts.deint_shader,
+             .target_trc = p->opts.target_trc,
+             .target_prim = p->opts.target_prim,
+             .target_peak = p->opts.target_peak,
+diff -ur mpv-0.34.1/video/out/gpu/video.h mpv-0.34.1-patched/video/out/gpu/video.h
+--- mpv-0.34.1/video/out/gpu/video.h	2022-01-03 20:45:08.000000000 +0100
++++ mpv-0.34.1-patched/video/out/gpu/video.h	2022-02-18 10:07:10.513581877 +0100
+@@ -151,6 +151,7 @@
+     int early_flush;
+     char *shader_cache_dir;
+     char *hwdec_interop;
++    int deint_shader;
+ };
+ 
+ extern const struct m_sub_options gl_video_conf;
+diff -ur mpv-0.34.1/wscript_build.py mpv-0.34.1-patched/wscript_build.py
+--- mpv-0.34.1/wscript_build.py	2022-01-03 20:45:08.000000000 +0100
++++ mpv-0.34.1-patched/wscript_build.py	2022-02-18 10:08:38.931294151 +0100
+@@ -191,7 +191,6 @@
+         ])
+ 
+     getch2_c = ctx.pick_first_matching_dep([
+-        ( "osdep/terminal-unix.c",               "posix" ),
+         ( "osdep/terminal-win.c",                "win32-desktop" ),
+         ( "osdep/terminal-dummy.c" ),
+     ])
+@@ -203,13 +202,11 @@
+     ])
+ 
+     ipc_c = ctx.pick_first_matching_dep([
+-        ( "input/ipc-unix.c",                    "posix" ),
+         ( "input/ipc-win.c",                     "win32-desktop" ),
+         ( "input/ipc-dummy.c" ),
+     ])
+ 
+     subprocess_c = ctx.pick_first_matching_dep([
+-        ( "osdep/subprocess-posix.c",            "posix" ),
+         ( "osdep/subprocess-win.c",              "win32-desktop" ),
+         ( "osdep/subprocess-dummy.c" ),
+     ])

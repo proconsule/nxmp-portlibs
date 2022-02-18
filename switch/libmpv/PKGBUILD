@@ -9,7 +9,7 @@ arch=('any')
 url='https://mpv.io/'
 license=('GPL')
 options=(!strip libtool staticlibs)
-source=("${pkgbasename}-${pkgver}.tar.gz::https://github.com/mpv-player/mpv/archive/refs/tags/v${pkgver}.tar.gz" "mpv.patch")
+source=("${pkgbasename}-${pkgver}.tar.gz::https://github.com/mpv-player/mpv/archive/refs/tags/v${pkgver}.tar.gz" "mpv-nxmp.patch")
 sha256sums=(
   'SKIP'
   'SKIP'
@@ -20,7 +20,7 @@ groups=('switch-portlibs')
 
 prepare() {
   cd mpv-$pkgver
-  patch -Np1 -i "$srcdir/mpv.patch"
+  patch -Np1 -i "$srcdir/mpv-nxmp.patch"
 }
 
 build() {
