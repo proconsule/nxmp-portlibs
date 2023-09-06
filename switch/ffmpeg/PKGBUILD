@@ -44,7 +44,7 @@ build() {
 			  --enable-libass --enable-libfreetype --enable-libfribidi --enable-tx1 \
 			  --enable-libssh2 --enable-libsmb2 --enable-libnfs --enable-libdav1d
 
-  make
+  make -j8
 }
 
 package() {
