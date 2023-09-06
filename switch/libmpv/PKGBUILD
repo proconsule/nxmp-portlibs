@@ -2,7 +2,7 @@
 # Contributor: Cpasjuste <cpasjuste@gmail.com>
 pkgbasename=libmpv
 pkgname=switch-${pkgbasename}
-pkgver=0.34.1
+pkgver=0.36.0
 pkgrel=1
 pkgdesc='Command line video player (library only)'
 arch=('any')
@@ -15,7 +15,7 @@ sha256sums=(
   'SKIP'
 )
 makedepends=('switch-pkg-config' 'dkp-toolchain-vars')
-depends=('switch-sdl2' 'switch-ffmpeg' 'switch-mesa')
+depends=('switch-sdl2' 'switch-mesa')
 groups=('switch-portlibs')
 
 prepare() {

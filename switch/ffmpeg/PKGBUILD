@@ -1,42 +1,54 @@
+# Maintainer: Dave Murphy <davem@devkitpro.org>
+# Contributor: Ezekiel Bethel <stary@9net.org>
+# Contributor: carstene1ns <dev f4ke de>
+# Contributor: jakibaki <jakibaki live com>
+# Contributor: averne <averne381@gmail.com>
+
 pkgname=switch-ffmpeg
-pkgver=85c169f6a62ad4e357ab139a4511854525938323
+pkgver=6.0
 pkgrel=1
-pkgdesc='ffmpeg port (for NXMP Switch development)'
+pkgdesc='ffmpeg port (for Nintendo Switch homebrew development)'
 arch=('any')
 url='https://ffmpeg.org/'
-license=('LGPL' 'GPL')
+license=('GPL')
 options=(!strip staticlibs)
 makedepends=('switch-pkg-config' 'dkp-toolchain-vars')
 depends=('switch-zlib' 'switch-bzip2' 'switch-libass' 'switch-libfribidi'
-         'switch-freetype')
-source=("https://github.com/proconsule/nxmp-portlibs/raw/master/switch/ffmpeg/FFmpeg-85c169f6a62ad4e357ab139a4511854525938323.tar.bz2" "https://github.com/proconsule/nxmp-portlibs/raw/master/switch/ffmpeg/ffmpeg-nxmp.patch" "https://github.com/proconsule/nxmp-portlibs/raw/master/switch/ffmpeg/ffmpeg-newfile.patch")
-sha256sums=(
- 'SKIP'
- 'SKIP'
- 'SKIP'
-)
+         'switch-freetype' 'switch-dav1d')
+source=("https://ffmpeg.org/releases/ffmpeg-${pkgver}.tar.xz" "ffmpeg-${pkgver}.patch")
+sha256sums=('57be87c22d9b49c112b6d24bc67d42508660e6b718b3db89c44e47e289137082'
+            'e7a78509655416ebd4b888cffe32692aac0c50695188efc01504ae4f166d2927')
+
 groups=('switch-portlibs')
 
 prepare() {
-  cd FFmpeg
-  patch -Np1 -i "$srcdir/ffmpeg-nxmp.patch"
-  patch -Np1 -i "$srcdir/ffmpeg-newfile.patch"
+  cd ffmpeg-$pkgver
+  patch -Np1 -i "$srcdir/ffmpeg-${pkgver}.patch"
 }
 
 build() {
-  cd FFmpeg
+  cd ffmpeg-$pkgver
 
   source /opt/devkitpro/switchvars.sh
 
-  ./configure --prefix=$PORTLIBS_PREFIX --disable-shared --enable-static --cross-prefix=aarch64-none-elf- --enable-cross-compile --arch=aarch64 --target-os=horizon --enable-pic --extra-cflags='-D__SWITCH__ -D_GNU_SOURCE -O2 -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' --extra-cxxflags='-D__SWITCH__ -D_GNU_SOURCE -O2 -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' --extra-ldflags='-fPIE -L${PORTLIBS_PREFIX}/lib -L${DEVKITPRO}/libnx/lib' --disable-runtime-cpudetect --disable-programs --disable-debug --disable-doc --disable-autodetect --disable-avdevice --disable-hwaccels --disable-encoders --enable-swscale --enable-swresample --enable-network --disable-protocols --enable-protocol='file,http,ftp,tcp,udp,rtmp,hls,https,tls,libssh2,libsmb2,libnfs' --enable-asm --enable-neon --enable-zlib --enable-bzlib --enable-libass --enable-libfreetype --enable-libfribidi --enable-mbedtls --enable-version3 --enable-demuxer=hls --enable-libssh2 --enable-libsmb2 --enable-libnfs
+  ./configure --prefix=$PORTLIBS_PREFIX --enable-gpl --disable-shared --enable-static \
+			  --cross-prefix=aarch64-none-elf- --enable-cross-compile --arch=aarch64 \
+			  --cpu=cortex-a57 --target-os=horizon --enable-pic \
+			  --extra-cflags='-D__SWITCH__ -D_GNU_SOURCE -O2 -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' \
+			  --extra-cxxflags='-D__SWITCH__ -D_GNU_SOURCE -O2 -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' \
+			  --extra-ldflags='-fPIE -L${PORTLIBS_PREFIX}/lib -L${DEVKITPRO}/libnx/lib' \
+			  --disable-runtime-cpudetect --disable-programs --disable-debug --disable-doc \
+			  --disable-autodetect --enable-asm --enable-neon --disable-avdevice --disable-encoders \
+			  --disable-muxers --enable-swscale --enable-swresample --enable-network --disable-protocols \
+			  --enable-protocol='file,http,ftp,tcp,udp,rtmp,libssh2,libsmb2,libnfs' --enable-zlib --enable-bzlib \
+			  --enable-libass --enable-libfreetype --enable-libfribidi --enable-tx1 \
+			  --enable-libssh2 --enable-libsmb2 --enable-libnfs --enable-libdav1d
 
-  sed 's/#define HAVE_INET_ATON 1/#define HAVE_INET_ATON 0/g' -i config.h
-  sed 's/#define HAVE_GETADDRINFO 1/#define HAVE_GETADDRINFO 0/g' -i config.h
-  make -j8
+  make
 }
 
 package() {
-  cd FFmpeg
+  cd ffmpeg-$pkgver
 
   source /opt/devkitpro/switchvars.sh
 

@@ -1,9 +1,9 @@
 # Maintainer: Dave Murphy <davem@devkitpro.org>
 # Contributor: carstene1ns <dev f4ke de>
-# Update the lib to 0.15.2
+# Update the lib to 0.17.1
 
 pkgname=switch-libass
-pkgver=0.15.2
+pkgver=0.17.1
 pkgrel=1
 pkgdesc='A portable subtitle renderer (Nintendo Switch port)'
 arch=('any')
@@ -19,7 +19,7 @@ groups=('switch-portlibs')
 build() {
   cd libass-$pkgver
 
-  source /opt/devkitpro/devkita64.sh
+#  source /opt/devkitpro/devkita64.sh
   source /opt/devkitpro/switchvars.sh
 
   ./configure --prefix="$PORTLIBS_PREFIX" --host=aarch64-none-elf \

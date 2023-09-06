@@ -1,33 +1,26 @@
-pkgname=libsmb2-3.0.0
-pkgver=3.0.0
+pkgname=switch-libsmb2
+pkgver=4.0.0
 pkgrel=1
-pkgdesc='SMB2/3 userspace client'
+pkgdesc="SMB2/3 userspace client"
+url="https://github.com/sahlberg/libsmb2"
+license=('LGPL')
 arch=('any')
-url='https://github.com/sahlberg/libsmb2'
-license=('(L)GPL')
 options=(!strip libtool staticlibs)
-source=(
-	"https://github.com/sahlberg/libsmb2/archive/refs/tags/v3.0.0.tar.gz"
-	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/libsmb2/smb2-endian.patch'
-        'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/libsmb2/smb2-getlogin.patch'
-	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/libsmb2/smb2-socket.patch'
-)
-sha256sums=(
-	'SKIP'
-	'SKIP'
-        'SKIP'
-	'SKIP'
-)
-#makedepends=('git' 'switch-pkg-config' 'devkitpro-pkgbuild-helpers')
 groups=('switch-portlibs')
+source=("${url}/archive/refs/tags/v${pkgver}.tar.gz" "switch.patch")
+sha256sums=(
+  'b4d1b13bc07adc68379a72f723b9032a950afd62fed7f2aa3e57f3421406da11'
+  '151d92ffdc8a8dce581baf7cc6f10e4096fd73497da172aaaee8e02d7d690d4b'
+)
+
+prepare() {
+  cd "libsmb2-${pkgver}"
+  patch -Np1 -i "$srcdir/switch.patch"
+}
 
 build() {
-  cd ${pkgname}
+  cd "libsmb2-${pkgver}"
 
-  patch -Np1 -i $srcdir/smb2-endian.patch
-  patch -Np1 -i $srcdir/smb2-getlogin.patch
-  patch -Np1 -i $srcdir/smb2-socket.patch
-  
   source ${DEVKITPRO}/switchvars.sh
 
   ./bootstrap
@@ -39,9 +32,10 @@ build() {
 }
 
 package() {
-  cd ${pkgname}
-  
-  make DESTDIR="$pkgdir" install
-  
-  install -Dm644 LICENCE-LGPL-2.1.txt "$pkgdir"${PORTLIBS_PREFIX}/licenses/$pkgname/LICENCE
+  cd "libsmb2-${pkgver}"
+
+  source /opt/devkitpro/switchvars.sh
+
+  make DESTDIR="${pkgdir}" install
+  install -Dm644 COPYING "${pkgdir}/opt/devkitpro/portlibs/switch/licenses/${pkgname}/LICENSE"
 }

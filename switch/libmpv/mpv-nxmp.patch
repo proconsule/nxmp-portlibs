@@ -1,7 +1,8 @@
-diff -ur mpv-0.34.1/osdep/io.c mpv-0.34.1-patched/osdep/io.c
---- mpv-0.34.1/osdep/io.c	2022-01-03 20:45:08.000000000 +0100
-+++ mpv-0.34.1-patched/osdep/io.c	2022-02-18 09:58:04.748580049 +0100
-@@ -61,7 +61,7 @@
+diff --git a/osdep/io.c b/osdep/io.c
+index 8cd6dede85..dd32f0fa1e 100644
+--- a/osdep/io.c
++++ b/osdep/io.c
+@@ -62,7 +62,7 @@ bool mp_set_cloexec(int fd)
      return true;
  }
  
@@ -10,7 +11,7 @@ diff -ur mpv-0.34.1/osdep/io.c mpv-0.34.1-patched/osdep/io.c
  int mp_make_cloexec_pipe(int pipes[2])
  {
      pipes[0] = pipes[1] = -1;
-@@ -81,7 +81,7 @@
+@@ -82,7 +82,7 @@ int mp_make_cloexec_pipe(int pipes[2])
  }
  #endif
  
@@ -19,8 +20,11 @@ diff -ur mpv-0.34.1/osdep/io.c mpv-0.34.1-patched/osdep/io.c
  int mp_make_wakeup_pipe(int pipes[2])
  {
      return mp_make_cloexec_pipe(pipes);
---- mpv-0.34.1/osdep/switch/sys/mman.h	1970-01-01 01:00:00.000000000 +0100
-+++ mpv-0.34.1-patched/osdep/switch/sys/mman.h	2021-01-21 11:14:31.172503720 +0100
+diff --git a/osdep/switch/sys/mman.h b/osdep/switch/sys/mman.h
+new file mode 100644
+index 0000000000..398ff01729
+--- /dev/null
++++ b/osdep/switch/sys/mman.h
 @@ -0,0 +1,15 @@
 +#ifndef _MEMMAP_H_
 +#define _MEMMAP_H_
@@ -37,10 +41,11 @@ diff -ur mpv-0.34.1/osdep/io.c mpv-0.34.1-patched/osdep/io.c
 +#define munmap(a, b) free(a)
 +
 +#endif
-diff -ur mpv-0.34.1/player/scripting.c mpv-0.34.1-patched/player/scripting.c
---- mpv-0.34.1/player/scripting.c	2022-01-03 20:45:08.000000000 +0100
-+++ mpv-0.34.1-patched/player/scripting.c	2022-02-18 09:58:49.833325674 +0100
-@@ -259,12 +259,12 @@
+diff --git a/player/scripting.c b/player/scripting.c
+index 3db879778c..165151b5ae 100644
+--- a/player/scripting.c
++++ b/player/scripting.c
+@@ -259,12 +259,12 @@ static void load_builtin_script(struct MPContext *mpctx, int slot, bool enable,
  
  void mp_load_builtin_scripts(struct MPContext *mpctx)
  {
@@ -59,32 +64,53 @@ diff -ur mpv-0.34.1/player/scripting.c mpv-0.34.1-patched/player/scripting.c
  }
  
  bool mp_load_scripts(struct MPContext *mpctx)
-diff -ur mpv-0.34.1/stream/stream_lavf.c mpv-0.34.1-patched/stream/stream_lavf.c
---- mpv-0.34.1/stream/stream_lavf.c	2022-01-03 20:45:08.000000000 +0100
-+++ mpv-0.34.1-patched/stream/stream_lavf.c	2022-02-18 09:59:25.305911988 +0100
-@@ -426,7 +426,7 @@
-   .open = open_f,
-   .protocols = (const char *const[]){
-      "lavf", "ffmpeg", "udp", "ftp", "tcp", "tls", "unix", "sftp", "md5",
--     "concat", "smb",
-+     "concat", "smb", "nfs",
-      NULL },
-   .stream_origin = STREAM_ORIGIN_UNSAFE,
-   .can_write = true,
-diff -ur mpv-0.34.1/sub/filter_regex.c mpv-0.34.1-patched/sub/filter_regex.c
---- mpv-0.34.1/sub/filter_regex.c	2022-01-03 20:45:08.000000000 +0100
-+++ mpv-0.34.1-patched/sub/filter_regex.c	2022-02-18 10:00:10.614660491 +0100
-@@ -1,5 +1,5 @@
+diff --git a/sub/filter_regex.c b/sub/filter_regex.c
+index 8e299918ce..0a91ecd659 100644
+--- a/sub/filter_regex.c
++++ b/sub/filter_regex.c
+@@ -1,5 +1,6 @@
 -#include <regex.h>
++//#include <regex.h>
  #include <sys/types.h>
 +#include <regex.h>
  
  #include "common/common.h"
  #include "common/msg.h"
-diff -ur mpv-0.34.1/video/out/gpu/video.c mpv-0.34.1-patched/video/out/gpu/video.c
---- mpv-0.34.1/video/out/gpu/video.c	2022-01-03 20:45:08.000000000 +0100
-+++ mpv-0.34.1-patched/video/out/gpu/video.c	2022-02-18 10:06:38.997063102 +0100
-@@ -109,6 +109,7 @@
+diff --git a/video/mp_image.c b/video/mp_image.c
+index 40678d10bd..acde9f155f 100644
+--- a/video/mp_image.c
++++ b/video/mp_image.c
+@@ -176,7 +176,9 @@ static bool mp_image_alloc_planes(struct mp_image *mpi)
+         return false;
+ 
+     // Note: mp_image_pool assumes this creates only 1 AVBufferRef.
+-    mpi->bufs[0] = av_buffer_alloc(size + align);
++//    mpi->bufs[0] = av_buffer_alloc(size + align);
++    mpi->bufs[0] = av_buffer_aligned_alloc(size + align, 0x100); // Aligmnent required for plane offsets
++
+     if (!mpi->bufs[0])
+         return false;
+ 
+diff --git a/video/mp_image.h b/video/mp_image.h
+index 98dd666412..41f3be0eee 100644
+--- a/video/mp_image.h
++++ b/video/mp_image.h
+@@ -32,7 +32,9 @@
+ // libraries except libavcodec don't really know what alignment they want.
+ // Things will randomly crash or get slower if the alignment is not satisfied.
+ // Whatever. This value should be pretty safe with current CPU architectures.
+-#define MP_IMAGE_BYTE_ALIGN 64
++//#define MP_IMAGE_BYTE_ALIGN 64
++#define MP_IMAGE_BYTE_ALIGN 256 // VIC alignement
++
+ 
+ #define MP_IMGFIELD_TOP_FIRST 0x02
+ #define MP_IMGFIELD_REPEAT_FIRST 0x04
+diff --git a/video/out/gpu/video.c b/video/out/gpu/video.c
+index 4233f14336..8ec134abcd 100644
+--- a/video/out/gpu/video.c
++++ b/video/out/gpu/video.c
+@@ -109,6 +109,7 @@ struct image {
      int w, h; // logical size (after transformation)
      struct gl_transform transform; // rendering transformation
      int padding; // number of leading padding components (e.g. 2 = rg is padding)
@@ -92,15 +118,15 @@ diff -ur mpv-0.34.1/video/out/gpu/video.c mpv-0.34.1-patched/video/out/gpu/video
  };
  
  // A named image, for user scripting purposes
-@@ -467,6 +468,7 @@
-         {"opengl-gamma", OPT_REPLACED("gamma-factor")},
-         {"linear-scaling", OPT_REMOVED("Split into --linear-upscaling and "
-                                         "--linear-downscaling")},
-+        {"gpu-nxmp-deint", OPT_CHOICE(deint_shader,{"0", 0}, {"1", 1}, {"2", -1})},
-         {0}
-     },
-     .size = sizeof(struct gl_video_opts),
-@@ -812,6 +814,10 @@
+@@ -437,6 +438,7 @@ const struct m_sub_options gl_video_conf = {
+         {"linear-downscaling", OPT_BOOL(linear_downscaling)},
+         {"linear-upscaling", OPT_BOOL(linear_upscaling)},
+         {"sigmoid-upscaling", OPT_BOOL(sigmoid_upscaling)},
++	{"gpu-nxmp-deint", OPT_CHOICE(deint_shader,{"0", 0}, {"1", 1}, {"2", -1})},
+         {"sigmoid-center", OPT_FLOAT(sigmoid_center), M_RANGE(0.0, 1.0)},
+         {"sigmoid-slope", OPT_FLOAT(sigmoid_slope), M_RANGE(1.0, 20.0)},
+         {"fbo-format", OPT_STRING(fbo_format)},
+@@ -842,6 +844,10 @@ static void pass_get_images(struct gl_video *p, struct video_image *vimg,
              .h = t->h,
              .padding = padding,
          };
@@ -111,12 +137,14 @@ diff -ur mpv-0.34.1/video/out/gpu/video.c mpv-0.34.1-patched/video/out/gpu/video
  
          for (int i = 0; i < 4; i++)
              img[n].components += !!p->ra_format.components[n][i];
-@@ -1348,8 +1354,21 @@
+@@ -1373,8 +1379,24 @@ static void copy_image(struct gl_video *p, unsigned int *offset, struct image im
          img.multiplier *= 1.0 / (tex_max - 1);
      }
  
 -    GLSLF("color.%s = %f * vec4(texture(texture%d, texcoord%d)).%s;\n",
 -          dst, img.multiplier, id, id, src);
++//    GLSLF("color.%s = %f * vec4(texture(texture%d, texcoord%d)).%s;\n",
++//          dst, img.multiplier, id, id, src);
 +//    GLSLF("color.%s = %f * vec4(texture(texture%d, texcoord%d)).%s;\n",
 +//          dst, img.multiplier, id, id, src);
 +
@@ -132,30 +160,32 @@ diff -ur mpv-0.34.1/video/out/gpu/video.c mpv-0.34.1-patched/video/out/gpu/video
 +        GLSLF("color.%s = %f * vec4(texture(texture%d, texcoord%d)).%s;\n",
 +              dst, img.multiplier, id, id, src);
 +    }    
++
  
      *offset += count;
  }
-@@ -2134,7 +2153,7 @@
+@@ -2171,7 +2193,7 @@ static void pass_read_video(struct gl_video *p)
      // If any textures are still in integer format by this point, we need
      // to introduce an explicit conversion pass to avoid breaking hooks/scaling
      for (int n = 0; n < 4; n++) {
 -        if (img[n].tex && img[n].tex->params.format->ctype == RA_CTYPE_UINT) {
-+        if (img[n].tex && (img[n].tex->params.format->ctype == RA_CTYPE_UINT  || img[n].interlaced)) {
++        if (img[n].tex && img[n].tex->params.format->ctype == RA_CTYPE_UINT || img[n].interlaced) {
              GLSLF("// use_integer fix for plane %d\n", n);
              copy_image(p, &(int){0}, img[n]);
              pass_describe(p, "use_integer fix");
-@@ -3781,6 +3800,7 @@
+@@ -3869,6 +3891,7 @@ static void check_gl_features(struct gl_video *p)
              .early_flush = p->opts.early_flush,
              .icc_opts = p->opts.icc_opts,
              .hwdec_interop = p->opts.hwdec_interop,
-+            .deint_shader = p->opts.deint_shader,
++	    .deint_shader = p->opts.deint_shader,
              .target_trc = p->opts.target_trc,
              .target_prim = p->opts.target_prim,
              .target_peak = p->opts.target_peak,
-diff -ur mpv-0.34.1/video/out/gpu/video.h mpv-0.34.1-patched/video/out/gpu/video.h
---- mpv-0.34.1/video/out/gpu/video.h	2022-01-03 20:45:08.000000000 +0100
-+++ mpv-0.34.1-patched/video/out/gpu/video.h	2022-02-18 10:07:10.513581877 +0100
-@@ -151,6 +151,7 @@
+diff --git a/video/out/gpu/video.h b/video/out/gpu/video.h
+index 30c100e302..8b6e8f71be 100644
+--- a/video/out/gpu/video.h
++++ b/video/out/gpu/video.h
+@@ -182,6 +182,7 @@ struct gl_video_opts {
      int early_flush;
      char *shader_cache_dir;
      char *hwdec_interop;
@@ -163,10 +193,11 @@ diff -ur mpv-0.34.1/video/out/gpu/video.h mpv-0.34.1-patched/video/out/gpu/video
  };
  
  extern const struct m_sub_options gl_video_conf;
-diff -ur mpv-0.34.1/wscript_build.py mpv-0.34.1-patched/wscript_build.py
---- mpv-0.34.1/wscript_build.py	2022-01-03 20:45:08.000000000 +0100
-+++ mpv-0.34.1-patched/wscript_build.py	2022-02-18 10:08:38.931294151 +0100
-@@ -191,7 +191,6 @@
+diff --git a/wscript_build.py b/wscript_build.py
+index a470808ae5..957789d64b 100644
+--- a/wscript_build.py
++++ b/wscript_build.py
+@@ -240,7 +240,6 @@ def build(ctx):
          ])
  
      getch2_c = ctx.pick_first_matching_dep([
@@ -174,7 +205,7 @@ diff -ur mpv-0.34.1/wscript_build.py mpv-0.34.1-patched/wscript_build.py
          ( "osdep/terminal-win.c",                "win32-desktop" ),
          ( "osdep/terminal-dummy.c" ),
      ])
-@@ -203,13 +202,11 @@
+@@ -252,13 +251,11 @@ def build(ctx):
      ])
  
      ipc_c = ctx.pick_first_matching_dep([
@@ -188,3 +219,16 @@ diff -ur mpv-0.34.1/wscript_build.py mpv-0.34.1-patched/wscript_build.py
          ( "osdep/subprocess-win.c",              "win32-desktop" ),
          ( "osdep/subprocess-dummy.c" ),
      ])
+@@ -621,10 +618,10 @@ def build(ctx):
+         ( "osdep/semaphore_osx.c" ),
+         ( "osdep/subprocess.c" ),
+         ( subprocess_c ),
+-        ( "osdep/w32_keyboard.c",                "os-cygwin" ),
++        ( "osdep/w32_keyboard.c",                "os-win32" ),
+         ( "osdep/w32_keyboard.c",                "os-win32" ),
+         ( "osdep/win32/pthread.c",               "win32-internal-pthreads"),
+-        ( "osdep/windows_utils.c",               "os-cygwin" ),
++        ( "osdep/windows_utils.c",               "os-win32" ),
+         ( "osdep/windows_utils.c",               "os-win32" ),
+ 
+         ## tree_allocator
