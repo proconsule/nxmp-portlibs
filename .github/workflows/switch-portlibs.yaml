@@ -1,0 +1,36 @@
+name: switch-portlibs
+
+on:
+  push:
+    branch: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-portlibs:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install depends
+      run: |
+        apt-get update
+        apt-get install -y patch fakeroot zstd autoconf libtool gcc-
+        for i in switch/dkp-*.zst; do dkp-pacman --noconfirm -U $i; done
+    - name: Build portlibs
+      run: |
+        adduser --gecos '' --disabled-password builder
+        echo 'builder ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/builder
+        chown -R builder:builder $GITHUB_WORKSPACE/switch
+        su - builder -c "make -C $GITHUB_WORKSPACE/switch"
+    - name: Upload portlibs
+      uses: softprops/action-gh-release@v1
+      with:
+        name: switch-portlibs
+        tag_name: switch-portlibs
+        prerelease: true
+        files: switch/*/*.pkg.tar.zst
+        body: |
+          ![download](https://img.shields.io/github/downloads/${{ github.repository }}/switch-portlibs/total?label=Downloads)

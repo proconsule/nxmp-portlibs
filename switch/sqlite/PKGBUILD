@@ -1,4 +1,4 @@
-pkgname=sqlite-3.7.3
+pkgname=sqlite
 pkgver=3.7.3
 pkgrel=1
 pkgdesc='SQLite 3 library'
@@ -6,9 +6,9 @@ arch=('any')
 url='https://www.sqlite.org/'
 license=('Public Domain')
 source=(
-        'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite-amalgamation-3.7.3.tar.gz'
-	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/sqlite3.patch'
-	'https://raw.githubusercontent.com/proconsule/nxmp-portlibs/master/switch/sqlite/mmap.patch'
+  'sqlite-amalgamation-3.7.3.tar.gz'
+	'sqlite3.patch'
+	'mmap.patch'
 )
 sha256sums=(
 	'SKIP'

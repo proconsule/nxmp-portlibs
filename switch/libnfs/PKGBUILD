@@ -1,4 +1,4 @@
-pkgname=libnfs-4.0.0
+pkgname=libnfs
 pkgver=4.0.0
 pkgrel=1
 pkgdesc='NFS userspace client'
@@ -7,8 +7,8 @@ url='https://github.com/sahlberg/libnfs'
 license=('(L)GPL')
 options=(!strip libtool staticlibs)
 source=(
-	"https://github.com/proconsule/nxmp-portlibs/raw/master/switch/libnfs/libnfs-20b39fd25155b8618b4a7c3a2b2a2b7e753883c7.tar.gz"
-        "https://github.com/proconsule/nxmp-portlibs/raw/master/switch/libnfs/libnfs.patch"
+  "libnfs-20b39fd25155b8618b4a7c3a2b2a2b7e753883c7.tar.gz"
+  "libnfs.patch"
 )
 sha256sums=(
 	'SKIP'
