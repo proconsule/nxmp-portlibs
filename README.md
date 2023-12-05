@@ -9,7 +9,7 @@ Clone without CRLF
 ```
 git config --global core.autocrlf false
 ```
-Using **"C:\devkitPro\msys2\mingw64.exe"**
+Using **"C:\devkitPro\msys2\msys2.exe"**
 ```
 pacman -S patch
 pacman -S binutils
